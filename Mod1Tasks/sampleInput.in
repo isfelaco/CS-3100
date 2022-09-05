@@ -1,8 +1,21 @@
-4 3
-groceryshopping
-pickupkids
-cookdinner
-bedtime
-groceryshopping cookdinner
-pickupkids cookdinner
-cookdinner bedtime
+11 9
+party1
+party2
+party3
+party4
+shop
+cook
+eat
+hw1
+hw2
+hw3
+laundry
+hw1 party4
+hw2 party4
+hw3 party4
+party1 party2
+party2 party3
+party3 party4
+laundry party3
+shop cook
+cook eat

@@ -20,22 +20,25 @@ Vertex::Vertex(string v, int n) {
 	indegree = 0;
 };
 
-void topSort(vector<vertex*> arr, int adj[100][100], int count) {
+bool sortIndegree (vertex* i,vertex* j) {
+	return (i->value < j->value);
+}
+
+
+void topSort(vector<vertex*> arr, int adj[100][100]) {
 	queue<vertex*> q;
 	int counter = 0;
 	vertex* v;
 
-	// q.makeEmpty(); // initialize the queue
 	for (auto v : arr) {
 		if (v->indegree == 0) {
 			q.push(v);
 		}
 	}
-	// q is just vertices with indegree = 0
-	// if multiple vertices have the same in degree, their order can be swapped
+
 	while (!q.empty()) {
 		v = q.front();
-		q.pop(); // get vertex of indegree 0
+		q.pop();
 		v->topologicalNum = ++counter;
 		int index = v->num;
 		for (auto w : arr) {
@@ -45,17 +48,21 @@ void topSort(vector<vertex*> arr, int adj[100][100], int count) {
 					q.push(w);
 				}
 			}
+
+			vector<vertex*> V;
+			while(!q.empty()) {
+				V.push_back(q.front());
+				q.pop();
+			}
+
+			sort(V.begin(), V.end(), sortIndegree);
+
+			for (auto v : V) {
+				q.push(v);
+			}
 		}
 	}
 }
-
-bool sortIndegree (vertex* i,vertex* j) {
-	if (i->indegree == j->indegree && i->indegree == 0) {
-		return (i->value < j->value);
-	}
-	return (i->indegree < j->indegree);
-}
-
 
 int main() {
 	string line1;
@@ -65,6 +72,7 @@ int main() {
 	int num_options = stoi(line1);
 	int num_dependencies = stoi(line2);
 
+	// initialize adjacency matrix
 	int size = 100;
     int adj[100][100];
     for (int i = 0; i < size; i++) {
@@ -73,9 +81,8 @@ int main() {
     	}
     }
 
+	// add all vertices  arr
     vector<vertex*> arr;
-
-	// add all vertices to arr
     string line;
 	for (int j = 0; j < num_options; j++){
 		cin >> line;
@@ -83,8 +90,8 @@ int main() {
 		arr.push_back(node);
 	}
 
-    int count = 0;
-	for(int k = 0; k < num_dependencies; k++) { // update adjacency matrix based on dependencies
+	// update adjacency matrix based on dependencies
+	for(int k = 0; k < num_dependencies; k++) {
 		string first;
 		string second;
 		cin >> first;
@@ -114,24 +121,24 @@ int main() {
 
 	sort(arr.begin(), arr.end(), sortIndegree);
 
-	topSort(arr, adj, count);
+	topSort(arr, adj);
 
 	int least = 1;
 
 	string output = "";
-	int c = 0;
+	int count = 0;
 	while (least < size) {
 		for (auto x : arr) {
 			if (x->topologicalNum == least) {
 				output += x->value;
 				output += " ";
-				c++;
+				count++;
 				break;
 			}
 		}
 		least++;
 	}
-	if (c == num_options) {
+	if (count == num_options) {
 		cout << output;
 	}
 	else cout << "IMPOSSIBLE";

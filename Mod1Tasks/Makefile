@@ -1,7 +1,7 @@
 #Makefile
 
 all:
-	g++ -std=c++11 -o a.out *.cpp
+	g++ -std=c++11 -o a.out topSort.cpp
 
 run:
 	./a.out

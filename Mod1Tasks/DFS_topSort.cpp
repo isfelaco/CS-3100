@@ -96,29 +96,14 @@ int main() {
 		}        
 	}	
 
-    // test that it's setting up adjacencies correctly
-    /**
-    for (int i = 0; i < num_options; i++) {
-        for (auto y : arr) {
-            if (y->num == i) {
-                cout << y->value << ": ";
-            }
-        }
-        for (auto x : adj[i]) {
-            cout << x->value;
-        }
-        cout << endl;
-    }
-    **/
-
     DFS(arr, adj);
 
-    string output[topsort_list.size()];
+    string output[num_options];
     // reversing the output
     int c = num_options - 1;
     for (auto x : topsort_list) {
         output[c] = x->value;
-        c--;
+         c--;
     }
     for (auto x : output) {
         cout << x << " ";
