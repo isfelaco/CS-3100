@@ -1,7 +1,7 @@
 #Makefile
 
 all:
-	g++ -std=c++11 -o a.out kruskals.cpp
+	g++ -std=c++11 -o a.out kruskals2.cpp
 
 run:
 	./a.out
