@@ -107,23 +107,20 @@ public:
         }
     }
 
-    void kruskals_mst(int size, node *root)
+    void kruskals_mst(int size, node *root, int switchCount, bool lightPresent)
     {
         // Sort all edges
         sort(edgelist.begin(), edgelist.end());
 
-        // Initialize the DSU
         DSU s(V);
         int ans = 0;
         int edgesAccepted = 0;
-        // s.parent[root->num] = 0;
         node *current = root;
+        int switchesFound = 0;
 
-        cout << "Following are the edges in the "
-                "constructed MST"
-             << endl;
+        // cout << "Following are the edges in the constructed MST" << endl;
 
-        while (edgesAccepted < size - 1)
+        while (edgesAccepted < 6)
         {
             int minWeight = 0;
             edge *least = NULL;
@@ -131,9 +128,22 @@ public:
             {
                 for (auto edge : edgelist)
                 {
+                    // cout << edge->known << endl;
+                    // cout << minWeight << endl;
                     bool c = (edge->first->num == current->num || edge->second->num == current->num);
-                    if (c && edge->weight == minWeight && edge->known == false)
+                    // cout << c << endl;
+                    // cout << edge->first->name << ", " << edge->second->name << ": " << edge->known << ", weight: " << edge->weight << endl;
+                    bool s = edge->second->type == "light" && switchesFound != switchCount;
+                    bool o = edge->first->type == "switch" && edge->second->type == "outlet";
+                    // cout << s << endl;
+                    /**
+                     * if you find a light and not all switches have been found, don't pick that edge
+                     */
+                    // if (edge->second->type == "switch" && s)
+                    //     cout << "idk" << endl;
+                    if (!o && !s && c && edge->weight == minWeight && edge->known == false)
                     {
+                        // cout << "SOMETHING" << endl;
                         least = edge;
                         break;
                     }
@@ -141,21 +151,30 @@ public:
                 minWeight++;
             }
             int w = least->weight;
+            // cout << "minWeight: " << w << endl;
             node *u = least->first;
             node *v = least->second;
+
+            if (least->first != current)
+                current = least->first;
+            else
+                current = least->second;
+
+            if (least->second->type == "switch")
+                switchesFound++;
 
             if (s.find(u->num) != s.find(v->num))
             {
                 s.unite(u->num, v->num);
                 least->known = true;
                 ans += w;
-                cout << u->name << " -- " << v->name << " == " << w
-                     << endl;
+                // cout << u->name << " -- " << v->name << " == " << w << endl;
                 edgesAccepted++;
+                least->known = true;
             }
         }
-
-        cout << "Minimum Cost Spanning Tree: " << ans;
+        // cout << "Minimum Cost Spanning Tree: " << ans;
+        cout << ans << endl;
     }
 };
 
@@ -169,6 +188,8 @@ int main()
 
     vector<node *> V;
     node *root;
+    int switchCount = 0;
+    bool lightPresent = false;
     for (int i = 0; i < junctions; i++)
     {
         string name;
@@ -177,9 +198,11 @@ int main()
         cin >> type;
         node *n = new node(name, type, i);
         if (type == "breaker")
-        {
             root = n;
-        }
+        if (type == "switch")
+            switchCount++;
+        if (type == "light")
+            lightPresent = true;
         V.push_back(n);
     }
 
@@ -212,7 +235,7 @@ int main()
         g.addEdge(node1, node2, weight);
     };
 
-    g.kruskals_mst(junctions, root);
+    g.kruskals_mst(junctions, root, switchCount, lightPresent);
     // g.print();
     return 0;
 }
