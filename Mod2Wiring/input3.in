@@ -1,0 +1,15 @@
+7 7
+b1 breaker
+j1 box
+s1 switch
+l1 light
+s2 switch
+l2 light
+o1 outlet
+b1 j1 4
+b1 o1 11
+j1 s1 4
+j1 s2 8
+s1 l1 25
+s2 l2 3
+s1 l2 1

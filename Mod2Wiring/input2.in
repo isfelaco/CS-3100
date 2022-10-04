@@ -1,0 +1,9 @@
+4 4
+b1 breaker
+j1 box
+j2 box
+s1 switch
+b1 s1 10
+j1 j2 1
+j2 s1 1
+j1 b1 12
