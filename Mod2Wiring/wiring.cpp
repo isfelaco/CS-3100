@@ -1,150 +1,176 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <queue>
-
+#include <bits/stdc++.h>
 using namespace std;
 
-/**
- * breaker box: start node
- * switch:
- * light: must be one switch between light and breaker box
- */
+// DSU data structure
+// path compression + rank by union
 
-/**
- * input:
- * J C : junction points, possible connections
- * J lines : list of junction points
- * C lines : connections and their costs
- */
+struct DSU
+{
+    int *rank;
+    int *parent;
+    int size;
+    DSU(int n);
+    int Find(int i)
+    {
+        if (parent[i] != -1)
+            return parent[i] = Find(parent[i]);
+        return i;
+    };
+    void Union(int x, int y)
+    {
+        int s1 = Find(x);
+        int s2 = Find(y);
+
+        if (rank[s1] > rank[s2])
+            parent[s2] = s1;
+        else
+        {
+            parent[s1] = s2;
+            if (rank[s1] == rank[s2])
+                rank[s2] = rank[s2] + 1;
+        }
+
+        // if (s1 != s2)
+        // {
+        //     if (rank[s1] < rank[s2])
+        //     {
+        //         parent[s1] = s2;
+        //         rank[s2] += rank[s1];
+        //     }
+        //     else
+        //     {
+        //         parent[s2] = s1;
+        //         rank[s1] += rank[s2];
+        //     }
+        // }
+    };
+};
+DSU::DSU(int n)
+{
+    size = n;
+    parent = new int[n];
+    rank = new int[n];
+    for (int i = 0; i < n; i++)
+    {
+        parent[i] = -1;
+        rank[i] = 1;
+    }
+};
 
 typedef struct Node
 {
-    string name;
+    string id;
     string type;
+    // list of edges
     int num;
-    bool known;
-    int weight;
-    int rank;
-    Node *parent;
-    Node(string n, string t, int num);
+    Node *parentSwitch;
+    bool seen;
+    Node(string i, string t, int n);
 } node;
-Node::Node(string n, string t, int number)
+Node::Node(string i, string t, int n)
 {
-    name = n;
+    id = i;
     type = t;
-    num = number;
-    known = false;
-    weight = 0;
-    rank = 0;
+    num = n;
+    parentSwitch = NULL; // if the node is a switch, what switch does it have to connect to
+    seen = false;
 };
 
 typedef struct Edge
 {
-    node *first;
-    node *second;
+    node *n1;
+    node *n2;
     int weight;
+    bool known;
     Edge(node *f, node *s, int w);
 } edge;
 Edge::Edge(node *f, node *s, int w)
 {
-    first = f;
-    second = s;
+    n1 = f;
+    n2 = s;
     weight = w;
+    known = false;
 };
 
-// void Prim(vector<node *> V, int E[100][100], node *root, int size)
-// {
-//     priority_queue<node *> pq;
-//     pq.push(root); // add root node
-//     // parent[root] = NULL;     // root->parent ?
-//     while (!pq.empty())
-//     {
-//         node *n = pq.top();
-//         for (int i = 0; i < size; i++)
-//         {
-//             int weight = E[n->num][i];
-//             for (auto v : V)
-//             {
-//                 if (v->num == i && weight != -1)
-//                 {
-//                     if (!v->known)
-//                     {
-//                         pq.push(v);
-//                         v->parent = n;
-//                     }
-//                 }
-//             }
-//         }
-//         pq.pop();
-//     }
-// }
-void makeSet(node *x)
+bool preSwitch(string type)
 {
-    x->parent = x;
-    x->rank - 0;
-}
-node *findSet(node *x)
-{
-    if (x != x->parent)
-    {
-        x->parent = findSet(x->parent);
-    }
-    return x->parent;
-}
-void linkSet(node *x, node *y)
-{
-    if (x->rank > y->rank)
-    {
-        y->parent = x;
-    }
-    else
-    {
-        x->parent = y;
-        if (x->rank == y->rank)
-        {
-            y->rank = y->rank + 1;
-        }
-    }
-}
-void unionSet(node *x, node *y)
-{
-    linkSet(findSet(x), findSet(y));
+    return type == "breaker" || type == "outlet" || type == "box";
 }
 
-void Kruskal(vector<node *> V, int E[100][100], vector<edge *> Edges, node *root, int size)
+bool postSwitch(string type)
 {
-    int edgesAccepted = 0;
-    // disjointSet s(NUM_VERTICES)
-    edge *edge;
-    node *u;
-    node *v;
-    while (edgesAccepted < size - 1)
+    return type == "light";
+}
+
+bool isSwitch(string type)
+{
+    return type == "switch";
+}
+
+bool validEdge(node *n1, node *n2)
+{
+    string type1 = n1->type;
+    string type2 = n2->type;
+    // cout << n1->id << ": " << n1->seen << ", " << n2->id << ": " << n2->seen << endl;
+    if (preSwitch(type1) && preSwitch(type2))
+        return true;
+    if (preSwitch(type1) && isSwitch(type2) && n2->seen == false)
+        return true;
+    if (postSwitch(type1) && postSwitch(type2) && n1->parentSwitch == n2->parentSwitch)
+        return true;
+    if (isSwitch(type1) && postSwitch(type2) && n1 == n2->parentSwitch)
+        return true;
+    return false;
+}
+
+struct Graph
+{
+    vector<edge *> edgelist;
+    int ans = 0;
+
+    DSU kruskals(DSU s, int size)
     {
-        // edge(u,v) = smallest weight edge not deleted yet
-        int least = 0;
-        for (auto e : Edges)
+        sort(edgelist.begin(), edgelist.end());
+
+        int edgesAccepted = 0;
+
+        while (edgesAccepted < size - 1)
         {
-            if (e->weight == least)
+            int minWeight = 0;
+            edge *least = NULL;
+            while (least == NULL)
             {
-                cout << e->first->name << e->second->name << endl;
-                edge = e;
-                u = e->first;
-                v = e->second;
-                break;
+                for (auto edge : edgelist)
+                {
+                    // cout << edge->n1->id << ", " << edge->n2->id << ": " << edge->known << ", weight: " << edge->weight << endl;
+                    if (edge->weight == minWeight && edge->known == false && validEdge(edge->n1, edge->n2))
+                    {
+                        least = edge;
+                        break;
+                    }
+                }
+                minWeight++;
             }
-            least += 1;
-        };
+            int w = least->weight;
+            node *u = least->n1;
+            node *v = least->n2;
 
-        // node *uset = findSet(u);
-        // node *vset = findSet(v);
-        // if (uset != vset)
-        // {
-        edgesAccepted++;
-        // unionSet(uset, vset);
-        // };
+            if (s.Find(u->num) != s.Find(v->num))
+            {
+                s.Union(u->num, v->num);
+                ans += w;
+                // cout << u->id << " -- " << v->id << " == " << w << endl;
+                edgesAccepted++;
+                least->known = true;
+                if (!isSwitch(u->type))
+                    u->seen = true;
+                v->seen = true;
+            }
+        }
+        cout << ans << endl;
+        return s;
     }
-}
+};
 
 int main()
 {
@@ -153,33 +179,29 @@ int main()
     cin >> junctions;
     cin >> connections;
 
-    vector<node *> V;
-    node *root;
+    vector<node *> Vertices;
+    node *lastSwitch = NULL;
+    int size2 = 0;
     for (int i = 0; i < junctions; i++)
     {
-        string name;
+        string id;
         string type;
-        cin >> name;
+        cin >> id;
         cin >> type;
-        node *n = new node(name, type, i);
-        if (type == "breaker")
-        {
-            root = n;
-        }
-        V.push_back(n);
-    }
-
-    int E[100][100];
-    for (int i = 0; i < 100; i++)
-    {
-        for (int j = 0; j < 100; j++)
-        {
-            E[i][j] = -1;
-        }
+        node *n = new node(id, type, i);
+        if (isSwitch(type))
+            lastSwitch = n; // if you see a switch, set the last seen switch
+        if (lastSwitch != NULL && !postSwitch(type))
+            lastSwitch == NULL; // if lastSwitch has been set but we are no longer looking at lights, set to NULL
+        if (postSwitch(type))
+            n->parentSwitch = lastSwitch; // if lastSwitch is set and we're looking at a light, set the light's parent
+        Vertices.push_back(n);
     }
 
     vector<edge *> Edges;
-
+    vector<edge *> preSwitches;
+    vector<edge *> switchesLights;
+    vector<edge *> bridges;
     for (int i = 0; i < connections; i++)
     {
         string first;
@@ -192,24 +214,30 @@ int main()
         int num2;
         node *node1;
         node *node2;
-        for (auto v : V)
+        for (auto v : Vertices)
         {
-            if (first == v->name)
+            if (first == v->id)
             {
                 num1 = v->num;
                 node1 = v;
             }
-            if (second == v->name)
+            if (second == v->id)
             {
                 num2 = v->num;
                 node2 = v;
             }
         };
-        E[num1][num2] = weight;
-        E[num2][num1] = weight;
-
-        Edges.push_back(new edge(node1, node2, weight));
+        if (validEdge(node1, node2))
+        {
+            edge *e = new edge(node1, node2, weight);
+            Edges.push_back(e);
+        };
     };
-    // Prim(V, E, root, junctions);
-    Kruskal(V, E, Edges, root, junctions);
+
+    Graph graph;
+    DSU s(junctions);
+    graph.edgelist = Edges;
+    graph.kruskals(s, junctions);
+
+    return 0;
 }
