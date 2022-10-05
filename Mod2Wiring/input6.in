@@ -1,0 +1,26 @@
+11 14
+b1 breaker
+j1 box
+j2 box
+j3 box
+o1 outlet
+o2 outlet
+s1 switch
+l1 light
+s2 switch
+l2 light
+l3 light
+b1 j1 13
+j1 s1 13
+s1 l1 10
+s1 j2 9
+j1 j2 11
+j1 o1 4
+b1 o2 2
+o2 o1 25
+o2 s2 25
+s2 o1 7
+o2 j3 15
+j3 s2 13
+s2 l2 5
+l2 l3 6
