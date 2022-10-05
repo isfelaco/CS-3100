@@ -1,9 +1,6 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-// DSU data structure
-// path compression + rank by union
-
 struct DSU
 {
     int *rank;
@@ -29,20 +26,6 @@ struct DSU
             if (rank[s1] == rank[s2])
                 rank[s2] = rank[s2] + 1;
         }
-
-        // if (s1 != s2)
-        // {
-        //     if (rank[s1] < rank[s2])
-        //     {
-        //         parent[s1] = s2;
-        //         rank[s2] += rank[s1];
-        //     }
-        //     else
-        //     {
-        //         parent[s2] = s1;
-        //         rank[s1] += rank[s2];
-        //     }
-        // }
     };
 };
 DSU::DSU(int n)
@@ -82,9 +65,9 @@ typedef struct Edge
     node *n2;
     int weight;
     bool known;
-    Edge(node *f, node *s, int w);
+    Edge(int w, node *f, node *s);
 } edge;
-Edge::Edge(node *f, node *s, int w)
+Edge::Edge(int w, node *f, node *s)
 {
     n1 = f;
     n2 = s;
@@ -96,61 +79,66 @@ bool preSwitch(string type)
 {
     return type == "breaker" || type == "outlet" || type == "box";
 }
-
 bool postSwitch(string type)
 {
     return type == "light";
 }
-
 bool isSwitch(string type)
 {
     return type == "switch";
 }
-
 bool validEdge(node *n1, node *n2)
 {
     string type1 = n1->type;
     string type2 = n2->type;
-    // cout << n1->id << ": " << n1->seen << ", " << n2->id << ": " << n2->seen << endl;
     if (preSwitch(type1) && preSwitch(type2))
         return true;
     if (preSwitch(type1) && isSwitch(type2) && n2->seen == false)
+        return true;
+    if (preSwitch(type2) && isSwitch(type1) && n1->seen == false)
         return true;
     if (postSwitch(type1) && postSwitch(type2) && n1->parentSwitch == n2->parentSwitch)
         return true;
     if (isSwitch(type1) && postSwitch(type2) && n1 == n2->parentSwitch)
         return true;
+    if (isSwitch(type2) && postSwitch(type1) && n2 == n1->parentSwitch)
+        return true;
     return false;
 }
 
+bool compareEdges(edge *e1, edge *e2)
+{
+    return e1->weight <= e2->weight;
+}
 struct Graph
 {
     vector<edge *> edgelist;
-    int ans = 0;
 
-    DSU kruskals(DSU s, int size)
+    void kruskals(DSU s, int size)
     {
-        sort(edgelist.begin(), edgelist.end());
+        sort(edgelist.begin(), edgelist.end(), compareEdges);
 
+        int ans = 0;
         int edgesAccepted = 0;
+        int minWeight = 0;
 
         while (edgesAccepted < size - 1)
         {
-            int minWeight = 0;
             edge *least = NULL;
+
             while (least == NULL)
             {
+                minWeight++;
                 for (auto edge : edgelist)
                 {
-                    // cout << edge->n1->id << ", " << edge->n2->id << ": " << edge->known << ", weight: " << edge->weight << endl;
                     if (edge->weight == minWeight && edge->known == false && validEdge(edge->n1, edge->n2))
                     {
                         least = edge;
                         break;
                     }
                 }
-                minWeight++;
             }
+
             int w = least->weight;
             node *u = least->n1;
             node *v = least->n2;
@@ -159,16 +147,17 @@ struct Graph
             {
                 s.Union(u->num, v->num);
                 ans += w;
-                // cout << u->id << " -- " << v->id << " == " << w << endl;
                 edgesAccepted++;
                 least->known = true;
-                if (!isSwitch(u->type))
+                minWeight = w - 1;
+
+                if (isSwitch(u->type) && preSwitch(v->type))
                     u->seen = true;
-                v->seen = true;
+                if (isSwitch(v->type) && preSwitch(u->type))
+                    v->seen = true;
             }
         }
         cout << ans << endl;
-        return s;
     }
 };
 
@@ -202,6 +191,7 @@ int main()
     vector<edge *> preSwitches;
     vector<edge *> switchesLights;
     vector<edge *> bridges;
+
     for (int i = 0; i < connections; i++)
     {
         string first;
@@ -227,9 +217,10 @@ int main()
                 node2 = v;
             }
         };
+        edge *e = new edge(weight, node1, node2);
+
         if (validEdge(node1, node2))
         {
-            edge *e = new edge(node1, node2, weight);
             Edges.push_back(e);
         };
     };
