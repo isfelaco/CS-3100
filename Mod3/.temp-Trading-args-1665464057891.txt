@@ -1,0 +1,6 @@
+-Dfile.encoding=Cp1252
+-classpath
+"C:\\CS-3100\\Mod3\\bin"
+-XX:+ShowCodeDetailsInExceptionMessages
+Trading.Trading
+input1.txt
